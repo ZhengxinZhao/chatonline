@@ -11,7 +11,7 @@ public class Request implements Serializable {
     private Map<String, Object> dataMap;
 
     public Request(){
-        this.dataMap = new HashMap<String, Object>();
+        this.dataMap = new HashMap<>();
     }
 
     public RequestType getRequestType() {

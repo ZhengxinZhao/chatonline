@@ -2,14 +2,13 @@ package com.glen.client;
 
 import com.glen.common.User;
 
-import java.awt.*;
-import java.io.IOException;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetAddress;
+
 import java.net.Socket;
-import java.util.List;
-import java.util.Properties;
+import java.util.Map;
+
 
 public class DataBuffer {
     // 当前客户端的用户信息
@@ -27,4 +26,7 @@ public class DataBuffer {
 
     private DataBuffer() {
     }
+
+    //在线用户数据
+    public static Map<String, String> onlineUser;//<id,nickname>
 }

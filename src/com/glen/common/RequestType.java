@@ -9,6 +9,6 @@ public enum RequestType {
     LOGOUT,
     // 群发
     BOARD,
-    // 踢除
-    REMOVE
+    // 从服务器获取信息
+    GET
 }
