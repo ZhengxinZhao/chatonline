@@ -1,12 +1,10 @@
 package com.glen.client;
-
 import com.glen.common.Message;
-import com.glen.common.Request;
 import com.glen.common.RequestType;
 
 import java.util.Scanner;
 
-public class test {
+public class testClient {
     public static void main(String[] args) {
         TcpClient tcpClient = new TcpClient();
         tcpClient.connection();
@@ -32,6 +30,11 @@ public class test {
                 String id=scanner.nextLine();
                 String text=scanner.nextLine();
                 tcpClient.sendMessage(RequestType.CHAT,id,new Message(text));
+            }
+            else if(command.equals("board")){
+                System.out.println("输入发送文本内容：");
+                String text=scanner.nextLine();
+                tcpClient.sendMessage(RequestType.BOARD,null, new Message(text));
             }
             else{
                 System.out.println("指令错误");

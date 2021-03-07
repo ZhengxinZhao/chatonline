@@ -16,14 +16,7 @@ public class TcpServer {
     //创建动态线程池，适合小并发量，容易出现OutOfMemoryError
     private ExecutorService executorService = Executors.newCachedThreadPool();
 
-    public static void main(String[] args) {
-        try {
-            TcpServer tcpServer = new TcpServer();
-            tcpServer.service();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+
 
     public TcpServer() throws IOException {
         serverSocket = new ServerSocket(port);
@@ -100,10 +93,16 @@ public class TcpServer {
                         if (password == null) {//未注册
                             response.setStatus(ResponseStatus.ERROR);
                             response.setData("text", "请先注册！");
-                        } else if (!password.equals(dataMap.get("password"))) {//密码错误
+                        }
+                        else if (!password.equals(dataMap.get("password"))) {//密码错误
                             response.setStatus(ResponseStatus.ERROR);
                             response.setData("text", "用户名或密码错误！");
-                        } else {//正确登录
+                        }
+                        else if(DataBuffer.userSocket.get(id)!=null){
+                            response.setStatus(ResponseStatus.ERROR);
+                            response.setData("text", "账号已在别处登录！");
+                        }
+                        else {//正确登录
                             this.id = id;
                             addOnlineUser(id,DataBuffer.userInfo.get(id),socket);
                             System.out.println(DataBuffer.userSocket);
@@ -150,7 +149,20 @@ public class TcpServer {
 
                     }
                     else if (requestType == RequestType.BOARD) {//群聊
-
+                        Message message = (Message)dataMap.get("message");
+                        //set response
+                        response.setType(requestType);
+                        response.setStatus(ResponseStatus.OK);
+                        response.setData("fromUserId",this.id);
+                        response.setData("message",message);
+                        //send
+                        for (Map.Entry<String, Socket> m : DataBuffer.userSocket.entrySet()
+                             ) {
+                            Socket socket = m.getValue();
+                            ObjectOutputStream oos2 = getOos(socket);
+                            oos2.writeObject(response);
+                            oos2.flush();
+                        }
                     }
                     else if(requestType==RequestType.GET){//请求资源
                         response.setType(requestType);

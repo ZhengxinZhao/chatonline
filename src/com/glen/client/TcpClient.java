@@ -116,7 +116,10 @@ public class TcpClient {
                         }
                     }
                     else if (type == RequestType.BOARD) {
-
+                        if(response.getStatus()==ResponseStatus.OK){
+                            System.out.println("收到来自"+response.getData("fromUserId")+"的消息："+
+                                    response.getData("message"));
+                        }
                     }
                     else if (type == RequestType.LOGIN) {
                         if (response.getStatus() == ResponseStatus.OK) {//登录成功
