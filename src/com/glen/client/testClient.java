@@ -31,10 +31,10 @@ public class testClient {
                 String text=scanner.nextLine();
                 tcpClient.sendMessage(RequestType.CHAT,id,new Message(text));
             }
-            else if(command.equals("board")){
+            else if(command.equals("FSEND")){
                 System.out.println("输入发送文本内容：");
                 String text=scanner.nextLine();
-                tcpClient.sendMessage(RequestType.BOARD,null, new Message(text));
+                tcpClient.sendMessage(RequestType.FSEND,null, new Message(text));
             }
             else{
                 System.out.println("指令错误");

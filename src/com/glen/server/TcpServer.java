@@ -17,7 +17,6 @@ public class TcpServer {
     private ExecutorService executorService = Executors.newCachedThreadPool();
 
 
-
     public TcpServer() throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("服务器启动监听...端口:" + port);
@@ -31,38 +30,44 @@ public class TcpServer {
 
     private ObjectOutputStream getOos(Socket socket) throws IOException {
         ObjectOutputStream oos = DataBuffer.oosCache.get(socket);
-        if(oos!=null) return oos;
+        if (oos != null) return oos;
         System.out.println("新生成oos");
         //若未初始,new
         //输出流缓冲区
         OutputStream outputStream = socket.getOutputStream();
-        oos =  new ObjectOutputStream(outputStream);
-        DataBuffer.oosCache.put(socket,oos);
+        oos = new ObjectOutputStream(outputStream);
+        DataBuffer.oosCache.put(socket, oos);
         return oos;
     }
 
     private ObjectInputStream getOis(Socket socket) throws IOException {
         ObjectInputStream ois = DataBuffer.oisCache.get(socket);
-        if (ois!=null) return ois;
+        if (ois != null) return ois;
         //若未初始,new
         //输入流缓冲区
         InputStream inputStream = socket.getInputStream();
-        ois =  new ObjectInputStream(inputStream);
-        DataBuffer.oisCache.put(socket,ois);
+        ois = new ObjectInputStream(inputStream);
+        DataBuffer.oisCache.put(socket, ois);
         return ois;
     }
 
-    private void addOnlineUser(String id, String nickname, Socket socket){
+    private void addOnlineUser(String id, String nickname, Socket socket) {
         DataBuffer.userSocket.put(id, socket);
         DataBuffer.onlineUser.put(id, nickname);
     }
-    private void deleteOnlineUser(String id){
+
+    private void deleteOnlineUser(String id) {
         Socket s = DataBuffer.userSocket.get(id);
-        DataBuffer.oosCache.remove(s);
-        DataBuffer.oisCache.remove(s);
         DataBuffer.userSocket.remove(id);
         DataBuffer.onlineUser.remove(id);
+        if(s!=null){
+            DataBuffer.oosCache.remove(s);
+            DataBuffer.oisCache.remove(s);
+        }
+
+
     }
+
     class Handler implements Runnable {
         private Socket socket;
         private String id;
@@ -93,28 +98,43 @@ public class TcpServer {
                         if (password == null) {//未注册
                             response.setStatus(ResponseStatus.ERROR);
                             response.setData("text", "请先注册！");
-                        }
-                        else if (!password.equals(dataMap.get("password"))) {//密码错误
+                        } else if (!password.equals(dataMap.get("password"))) {//密码错误
                             response.setStatus(ResponseStatus.ERROR);
                             response.setData("text", "用户名或密码错误！");
-                        }
-                        else if(DataBuffer.userSocket.get(id)!=null){
+                        } else if (DataBuffer.userSocket.get(id) != null) {
                             response.setStatus(ResponseStatus.ERROR);
                             response.setData("text", "账号已在别处登录！");
-                        }
-                        else {//正确登录
+                        } else {//正确登录
                             this.id = id;
-                            addOnlineUser(id,DataBuffer.userInfo.get(id),socket);
+                            addOnlineUser(id, DataBuffer.userInfo.get(id), socket);
+                            //通知其他用户
+                            Response response1 = new Response();
+                            response1.setType(RequestType.INFORM);
+                            response1.setStatus(ResponseStatus.OK);
+                            response1.setData("informName", "loginTip");
+                            response1.setData("id", this.id);
+                            response1.setData("nickName",DataBuffer.userInfo.get(this.id));
+                            for (Map.Entry<String, Socket> m : DataBuffer.userSocket.entrySet()
+                            ) {
+                                Socket socket = m.getValue();
+                                ObjectOutputStream oos2 = getOos(socket);
+                                oos2.writeObject(response1);
+                                oos2.flush();
+                            }
+
                             System.out.println(DataBuffer.userSocket);
+                            response.clearData();
+                            response.setType(RequestType.LOGIN);
+
                             response.setStatus(ResponseStatus.OK);
                             //发回id和昵称
                             response.setData("id", id);
                             response.setData("nickname", DataBuffer.userInfo.get(id));
                         }
+
                         oos.writeObject(response);
                         oos.flush();
-                    }
-                    else if (requestType == RequestType.LOGOUT) {//下线请求
+                    } else if (requestType == RequestType.LOGOUT) {//下线请求
                         System.out.println("收到登出请求");
                         //从在线表中剔除该id用户
 
@@ -124,51 +144,60 @@ public class TcpServer {
                         response.setStatus(ResponseStatus.OK);
                         oos.writeObject(response);
                         oos.flush();
+                        //通知其他用户
+                        Response response1 = new Response();
+                        response1.setType(RequestType.INFORM);
+                        response1.setStatus(ResponseStatus.OK);
+                        response1.setData("informName", "logoutTip");
+                        response1.setData("id", this.id);
+                        for (Map.Entry<String, Socket> m : DataBuffer.userSocket.entrySet()
+                        ) {
+                            Socket socket = m.getValue();
+                            ObjectOutputStream oos2 = getOos(socket);
+                            oos2.writeObject(response1);
+                            oos2.flush();
+                        }
 
-                    }
-                    else if (requestType == RequestType.CHAT) {//私聊
+                    } else if (requestType == RequestType.CHAT) {//私聊
                         String targetId = (String) dataMap.get("targetUserId");
-                        Message message = (Message)dataMap.get("message");
+                        Message message = (Message) dataMap.get("message");
                         Socket targetSocket = DataBuffer.userSocket.get(targetId);
                         response.setType(requestType);
-                        if(targetSocket==null){
+                        if (targetSocket == null) {
                             response.setStatus(ResponseStatus.ERROR);
-                            response.setData("errorInfo","该用户已下线");
+                            response.setData("errorInfo", "该用户已下线");
                             oos.writeObject(response);
                             oos.flush();
-                        }
-                        else{
+                        } else {
                             response.setStatus(ResponseStatus.OK);
-                            response.setData("fromUserId",this.id);
-                            response.setData("message",message);
+                            response.setData("fromUserId", this.id);
+                            response.setData("message", message);
                             ObjectOutputStream oos2 = getOos(targetSocket);
                             oos2.writeObject(response);
                             oos2.flush();
 
                         }
 
-                    }
-                    else if (requestType == RequestType.BOARD) {//群聊
-                        Message message = (Message)dataMap.get("message");
+                    } else if (requestType == RequestType.FSEND) {//群聊
+                        Message message = (Message) dataMap.get("message");
                         //set response
                         response.setType(requestType);
                         response.setStatus(ResponseStatus.OK);
-                        response.setData("fromUserId",this.id);
-                        response.setData("message",message);
+                        response.setData("fromUserId", this.id);
+                        response.setData("message", message);
                         //send
                         for (Map.Entry<String, Socket> m : DataBuffer.userSocket.entrySet()
-                             ) {
+                        ) {
                             Socket socket = m.getValue();
                             ObjectOutputStream oos2 = getOos(socket);
                             oos2.writeObject(response);
                             oos2.flush();
                         }
-                    }
-                    else if(requestType==RequestType.GET){//请求资源
+                    } else if (requestType == RequestType.GET) {//请求资源
                         response.setType(requestType);
                         response.setStatus(ResponseStatus.OK);
-                        if("onlineUser".equals(request.getDataMap().get("itemName")))
-                            response.setData("onlineUser",DataBuffer.onlineUser);
+                        if ("onlineUser".equals(request.getDataMap().get("itemName")))
+                            response.setData("onlineUser", DataBuffer.onlineUser);
                         oos.writeObject(response);
                         oos.flush();
                     }
@@ -177,19 +206,18 @@ public class TcpServer {
 
             } catch (EOFException eof) {
                 //直接到finally，关闭连接
-                System.out.println(this.id+"连接断开");
+                System.out.println(this.id + "连接断开");
             } catch (IOException | ClassNotFoundException e) {
-                if(e instanceof IOException){
-                    System.out.println(this.id+"连接断开");
-                }
-                else{
+                if (e instanceof IOException) {
+                    System.out.println(this.id + "连接断开");
+                } else {
                     e.printStackTrace();
                 }
 
 
             } finally {
                 //若连接异常断开,从在线表中剔除该id用户
-                if(id!=null)
+                if (id != null)
                     deleteOnlineUser(id);
                 //关闭socket
                 if (socket != null) {

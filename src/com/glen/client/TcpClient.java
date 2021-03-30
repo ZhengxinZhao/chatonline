@@ -1,17 +1,32 @@
 package com.glen.client;
 
+import com.glen.client.Ui.ChatFrame;
+import com.glen.client.Ui.FriendListPanel;
+import com.glen.client.Ui.LoginFrame;
 import com.glen.common.*;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.Map;
-import java.util.Scanner;
+
 
 public class TcpClient {
 
+    ChatFrame chatFrame;
+    LoginFrame loginFrame;
+    FriendListPanel friendListPanel;
+
+    public void setFriendListPanel(FriendListPanel friendListPanel) {
+        this.friendListPanel = friendListPanel;
+    }
 
 
-
+    public void setChatFrame(ChatFrame chatFrame){
+        this.chatFrame = chatFrame;
+    }
+    public void setLoginFrame(LoginFrame loginFrame){
+        this.loginFrame = loginFrame;
+    }
     //连接到服务器
     public  void connection() {
         String ip = DataBuffer.SERVER_IP;
@@ -107,39 +122,64 @@ public class TcpClient {
                     }
                     else if (type == RequestType.CHAT) {
                         if(response.getStatus()==ResponseStatus.OK){
-                            System.out.println("收到来自"+response.getData("fromUserId")+"的消息："+
-                                    response.getData("message"));
+                            String fromUserId = (String) response.getData("fromUserId");
+                            Message message = (Message) response.getData("message");
+                            chatFrame.showMessage(message,fromUserId,false);
+                            System.out.println("收到来自"+fromUserId+"的消息："+message);
                         }
                         else {
                             System.out.println("消息发送失败。。。。。");
                             System.out.println("错误信息："+response.getData("errorInfo"));
                         }
                     }
-                    else if (type == RequestType.BOARD) {
+                    else if (type == RequestType.FSEND) {
                         if(response.getStatus()==ResponseStatus.OK){
-                            System.out.println("收到来自"+response.getData("fromUserId")+"的消息："+
-                                    response.getData("message"));
+                            String fromUserId = (String) response.getData("fromUserId");
+                            Message message = (Message) response.getData("message");
+                            chatFrame.showMessage(message,fromUserId,true);
+                            System.out.println("收到来自"+fromUserId+"的消息："+message);
                         }
                     }
                     else if (type == RequestType.LOGIN) {
                         if (response.getStatus() == ResponseStatus.OK) {//登录成功
-
                             //生成当前用户
                             DataBuffer.currentUser = new User((String) response.getData("id"), (String) response.getData("nickname"));
                             System.out.println(DataBuffer.currentUser.getNickname() + "登录成功");
+                            //通知UI
+                            loginFrame.onLoginSucceed();
                             //获取在线用户
                             getOnlineUser();
                         } else if (response.getStatus() == ResponseStatus.ERROR) {
-                            System.out.println((String) response.getData("text"));
+                            String errorInfo = (String) response.getData("text");
+                            System.out.println(errorInfo);
+                            //通知UI
+                            loginFrame.onLoginFailed( errorInfo);
                         }
                     }
                     else if(type==RequestType.GET){
                         if(response.getStatus()==ResponseStatus.OK){
-                            DataBuffer.onlineUser =(Map<String, String>) response.getData("onlineUser");
+                            DataBuffer.onlineUser = (Map<String, String>) response.getData("onlineUser");
                             System.out.println(DataBuffer.onlineUser);
+                            //通知UI
+                            friendListPanel.onOnlineUserChange();
                         }
                         else{
                             System.out.println("GET请求失败！");
+                        }
+                    }else if(type==RequestType.INFORM){//来自服务器的通知
+                        String informName = (String) response.getData("informName");
+                        if(informName.equals("loginTip")){
+                            String id = (String) response.getData("id") ;
+                            String nickName = (String)response.getData("nickName") ;
+                            DataBuffer.onlineUser.put(id,nickName);
+                            if(friendListPanel!=null)
+                                friendListPanel.onOnlineUserChange();
+                        }
+                        else if(informName.equals("logoutTip")){
+                            String id = (String) response.getData("id") ;
+                            DataBuffer.onlineUser.remove(id);
+                            if(friendListPanel!=null)
+                                friendListPanel.onOnlineUserChange();
                         }
                     }
 

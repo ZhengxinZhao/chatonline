@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 
 import java.net.Socket;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class DataBuffer {
@@ -25,8 +26,13 @@ public class DataBuffer {
     public static final int SERVER_PORT = 8980;
 
     private DataBuffer() {
+
     }
 
     //在线用户数据
     public static Map<String, String> onlineUser;//<id,nickname>
+
+    static {
+        onlineUser = new ConcurrentHashMap<>();
+    }
 }

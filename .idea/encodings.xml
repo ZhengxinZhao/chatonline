@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/Ui/FriendListPanel.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/Ui/LoginFrame.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/tools/ClientToServerThread.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/tools/ManageChatFrame.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/tools/ManageFriendListFrame.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/tools/ManageThread.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/tools/MyTreeCellRenderer.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/com/glen/client/view/Chat.java" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
+  </component>
+</project>

@@ -48,6 +48,8 @@ public class Response implements Serializable {
     public void setData(String dataName, Object data){
         this.dataMap.put(dataName, data);
     }
-
+    public void clearData(){
+        this.dataMap.clear();
+    }
 
 }

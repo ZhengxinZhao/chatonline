@@ -8,7 +8,9 @@ public enum RequestType {
     //客户端登出
     LOGOUT,
     // 群发
-    BOARD,
+    FSEND,
     // 从服务器获取信息
-    GET
+    GET,
+    //服务器主动发出的通知
+    INFORM
 }
